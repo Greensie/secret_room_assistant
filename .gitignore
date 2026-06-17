@@ -1,0 +1,4 @@
+.luarc.json
+.vscode/settings.json
+check_logs.cmd
+check_logs.ps1
