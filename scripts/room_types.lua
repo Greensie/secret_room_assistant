@@ -1,3 +1,8 @@
+----------------------------------------------------------------------------------------------------
+--                  Maps Isaac room type constants to readable diagnostic names.                  --
+--                   Keeps type formatting separate from gameplay calculations.                   --
+----------------------------------------------------------------------------------------------------
+
 local RoomTypes = {}
 
 RoomTypes.NAMES = {
@@ -19,10 +24,12 @@ RoomTypes.NAMES = {
     [RoomType.ROOM_ULTRASECRET] = "ROOM_ULTRASECRET",
 }
 
+--- Returns a stable diagnostic name for an Isaac room type.
 function RoomTypes.getName(roomType)
     return RoomTypes.NAMES[roomType] or "UNKNOWN"
 end
 
+--- Returns the room type name without the common ROOM_ prefix.
 function RoomTypes.getShortName(roomType)
     local roomTypeName = RoomTypes.getName(roomType)
 

@@ -1,3 +1,8 @@
+----------------------------------------------------------------------------------------------------
+--                   Converts room shapes into stable level-grid cell geometry.                   --
+--                   Provides shared cell, neighbor, and room-anchor utilities.                   --
+----------------------------------------------------------------------------------------------------
+
 local Grid = {}
 
 Grid.LEVEL_GRID_WIDTH = 13
@@ -12,12 +17,31 @@ local ROOM_SHAPE_OFFSETS = {
     [6] = { { x = 0, y = 0 }, { x = 1, y = 0 } },               -- 2x1
     [7] = { { x = 0, y = 0 }, { x = 1, y = 0 } },               -- IIH
     [8] = { { x = 0, y = 0 }, { x = 1, y = 0 }, { x = 0, y = 1 }, { x = 1, y = 1 } },
-    [9] = { { x = 0, y = 0 }, { x = 0, y = 1 }, { x = 1, y = 1 } },  -- LTL
-    [10] = { { x = 1, y = 0 }, { x = 0, y = 1 }, { x = 1, y = 1 } }, -- LTR
-    [11] = { { x = 0, y = 0 }, { x = 1, y = 0 }, { x = 0, y = 1 } }, -- LBL
-    [12] = { { x = 0, y = 0 }, { x = 1, y = 0 }, { x = 1, y = 1 } }, -- LBR
+    [9] = { { x = 0, y = 0 }, { x = -1, y = 1 }, { x = 0, y = 1 } }, -- LTL
+    [10] = { { x = 0, y = 0 }, { x = 0, y = 1 }, { x = 1, y = 1 } },  -- LTR
+    [11] = { { x = 0, y = 0 }, { x = 1, y = 0 }, { x = 1, y = 1 } },  -- LBL
+    [12] = { { x = 0, y = 0 }, { x = 1, y = 0 }, { x = 0, y = 1 } },  -- LBR
 }
 
+--- Returns SafeGridIndex as the stable room anchor, with GridIndex as a compatibility fallback.
+function Grid.getRoomAnchorCell(roomDesc)
+    if roomDesc == nil then
+        return -1
+    end
+
+    local safeGridIndex = roomDesc.SafeGridIndex
+
+    if safeGridIndex ~= nil and
+        safeGridIndex >= 0 and
+        safeGridIndex < Grid.LEVEL_GRID_SIZE
+    then
+        return safeGridIndex
+    end
+
+    return roomDesc.GridIndex or -1
+end
+
+--- Checks whether a level-grid cell exists in an array of cell indexes.
 function Grid.containsCell(cells, targetCell)
     if cells == nil then
         return false
@@ -32,6 +56,7 @@ function Grid.containsCell(cells, targetCell)
     return false
 end
 
+--- Merges multiple cell arrays into one sorted list without duplicates.
 function Grid.mergeUniqueCells(...)
     local mergedCells = {}
     local cellsByIndex = {}
@@ -53,10 +78,12 @@ function Grid.mergeUniqueCells(...)
     return mergedCells
 end
 
+--- Expands a room shape from its stable anchor into every occupied level-grid cell.
 function Grid.getOccupiedCells(roomDesc)
     local cells = {}
+    local anchorCell = Grid.getRoomAnchorCell(roomDesc)
 
-    if roomDesc.GridIndex < 0 or roomDesc.GridIndex >= Grid.LEVEL_GRID_SIZE then
+    if anchorCell < 0 or anchorCell >= Grid.LEVEL_GRID_SIZE then
         return cells
     end
 
@@ -71,7 +98,7 @@ function Grid.getOccupiedCells(roomDesc)
         for i, offset in ipairs(offsets) do
             table.insert(
                 cells,
-                roomDesc.GridIndex + offset.x + offset.y * Grid.LEVEL_GRID_WIDTH
+                anchorCell + offset.x + offset.y * Grid.LEVEL_GRID_WIDTH
             )
         end
 
@@ -83,13 +110,14 @@ function Grid.getOccupiedCells(roomDesc)
 
     for y = 0, heightCells - 1 do
         for x = 0, widthCells - 1 do
-            table.insert(cells, roomDesc.GridIndex + x + y * Grid.LEVEL_GRID_WIDTH)
+            table.insert(cells, anchorCell + x + y * Grid.LEVEL_GRID_WIDTH)
         end
     end
 
     return cells
 end
 
+--- Returns unoccupied orthogonal cells around a room, grouped by direction.
 function Grid.getNeighborCellsByDirection(roomDesc)
     local occupiedCells = Grid.getOccupiedCells(roomDesc)
 
@@ -128,6 +156,7 @@ function Grid.getNeighborCellsByDirection(roomDesc)
     return neighbors
 end
 
+--- Serializes cell indexes for optional diagnostic messages.
 function Grid.joinCells(cells)
     local parts = {}
 

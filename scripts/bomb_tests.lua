@@ -1,8 +1,14 @@
+----------------------------------------------------------------------------------------------------
+--                 Matches explosions to candidate walls and validates distance.                  --
+--                 Creates delayed checks that confirm whether a doorway opened.                  --
+----------------------------------------------------------------------------------------------------
+
 local BombTests = {}
 
 BombTests.MAX_TEST_DISTANCE = 70
 BombTests.EVALUATION_DELAY_FRAMES = 5
 
+--- Finds the candidate wall nearest to an explosion and checks whether the blast was close enough.
 function BombTests.findClosestCandidateWall(room, explosionPosition, candidateWalls)
     local closestResult = nil
 
@@ -26,6 +32,7 @@ function BombTests.findClosestCandidateWall(room, explosionPosition, candidateWa
     return closestResult
 end
 
+--- Formats an initial bomb-distance evaluation for optional diagnostic output.
 function BombTests.formatResult(result)
     if result == nil then
         return "no_candidate_wall"
@@ -44,6 +51,7 @@ function BombTests.formatResult(result)
         " " .. status
 end
 
+--- Creates a delayed test so door creation can be checked a few frames after the explosion.
 function BombTests.createPendingTest(result, currentFrame)
     return {
         candidateCell = result.candidateCell,
@@ -52,6 +60,7 @@ function BombTests.createPendingTest(result, currentFrame)
     }
 end
 
+--- Formats the final result of checking whether an explosion opened a door.
 function BombTests.formatEvaluation(candidateCell, wasOpened)
     local status = "UNKNOWN"
 

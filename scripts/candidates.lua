@@ -1,9 +1,16 @@
+----------------------------------------------------------------------------------------------------
+--                 Builds fair-play Secret Room candidates from known map cells.                  --
+--                 Ranks locations and rejects topology forbidden by room types.                  --
+----------------------------------------------------------------------------------------------------
+
 local Grid = require("scripts.grid")
 
 local Candidates = {}
 
 local ROOM_BOSS = RoomType and RoomType.ROOM_BOSS or 5
+local ROOM_SUPERSECRET = RoomType and RoomType.ROOM_SUPERSECRET or 8
 
+--- Returns known orthogonal neighbors and the wall direction facing the candidate cell.
 function Candidates.getKnownNeighbors(cell, knownCells)
     local neighbors = {}
     local column = cell % Grid.LEVEL_GRID_WIDTH
@@ -32,10 +39,12 @@ function Candidates.getKnownNeighbors(cell, knownCells)
     return neighbors
 end
 
+--- Counts how many player-known cells touch a potential Secret Room location.
 function Candidates.countKnownNeighbors(cell, knownCells)
     return #Candidates.getKnownNeighbors(cell, knownCells)
 end
 
+--- Rejects locations touching a Boss Room because Secret Rooms cannot connect to one.
 local function hasBossNeighbor(knownNeighbors, roomTypesByCell)
     if roomTypesByCell == nil then
         return false
@@ -50,6 +59,22 @@ local function hasBossNeighbor(knownNeighbors, roomTypesByCell)
     return false
 end
 
+--- Rejects locations touching a known Super Secret Room.
+local function hasSuperSecretNeighbor(knownNeighbors, roomTypesByCell)
+    if roomTypesByCell == nil then
+        return false
+    end
+
+    for i, neighbor in ipairs(knownNeighbors) do
+        if roomTypesByCell[neighbor.cell] == ROOM_SUPERSECRET then
+            return true
+        end
+    end
+
+    return false
+end
+
+--- Adds an empty cell once it satisfies the basic topology and room-type rules.
 local function addCandidateIfValid(candidatesByCell, candidateCell, knownCells, roomTypesByCell)
     if candidateCell == nil then
         return
@@ -70,6 +95,10 @@ local function addCandidateIfValid(candidatesByCell, candidateCell, knownCells, 
         return
     end
 
+    if hasSuperSecretNeighbor(knownNeighbors, roomTypesByCell) then
+        return
+    end
+
     if knownNeighborCount >= 2 then
         candidatesByCell[candidateCell] = {
             knownNeighborCount = knownNeighborCount,
@@ -78,6 +107,7 @@ local function addCandidateIfValid(candidatesByCell, candidateCell, knownCells, 
     end
 end
 
+--- Builds and ranks all plausible Secret Room cells using only information available to the player.
 function Candidates.getTheoreticalSecretCandidates(knownCells, roomTypesByCell)
     local candidatesByCell = {}
 
@@ -118,7 +148,12 @@ function Candidates.getTheoreticalSecretCandidates(knownCells, roomTypesByCell)
     return candidates
 end
 
-function Candidates.getCandidateSymbol(knownNeighborCount)
+--- Maps candidate confidence and blocked state to the symbol shown by the UI.
+function Candidates.getCandidateSymbol(knownNeighborCount, isBlocked)
+    if isBlocked then
+        return "x"
+    end
+
     if knownNeighborCount >= 3 then
         return "!"
     end
@@ -126,11 +161,15 @@ function Candidates.getCandidateSymbol(knownNeighborCount)
     return "?"
 end
 
+--- Produces a compact candidate list for verbose diagnostics.
 function Candidates.formatSecretCandidates(candidates)
     local parts = {}
 
     for i, candidate in ipairs(candidates) do
-        local symbol = Candidates.getCandidateSymbol(candidate.knownNeighborCount)
+        local symbol = Candidates.getCandidateSymbol(
+            candidate.knownNeighborCount,
+            candidate.isBlocked
+        )
 
         table.insert(
             parts,
