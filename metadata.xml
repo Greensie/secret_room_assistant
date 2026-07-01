@@ -1,8 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <metadata>
-	<name>secret room assistant</name>
-	<directory>secret room assistant</directory>
-	<description/>
-	<version>1.0</version>
-	<visibility/>
+    <name>secret room assistant</name>
+    <directory>secret room assistant</directory>
+    <id>3755814659</id>
+    <description>Secret Room Assistant
+Helps you find likely Secret Room locations without directly revealing hidden floor data.
+The mod analyzes only rooms you have already visited or legitimately revealed on the minimap, then marks possible Secret Room spots through MinimapAPI. It also filters out impossible locations, blocked walls, discovered secrets, mapping effects, special dimensions, and floors/challenges where Secret Rooms cannot appear.
+Requires MinimapAPI.</description>
+    <version>1.1</version>
+    <visibility>Public</visibility>
+    <tag id="Lua"/>
+    <tag id="Rooms"/>
 </metadata>
-
