@@ -2,3 +2,4 @@
 .vscode/settings.json
 check_logs.cmd
 check_logs.ps1
+listofbugs.txt

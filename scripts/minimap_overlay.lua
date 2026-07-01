@@ -16,11 +16,13 @@ local ZERO_VECTOR = Vector(0, 0)
 local initialized = false
 local iconSprite = nil
 
+--- Identifies proxy rooms owned by this mod using their stable ID prefix.
 local function isCandidateRoom(room)
     return type(room.ID) == "string" and
         string.sub(room.ID, 1, #LEGACY_MARKER_ID_PREFIX) == LEGACY_MARKER_ID_PREFIX
 end
 
+--- Detaches a proxy room from cached MinimapAPI adjacency before removing it.
 local function removeAdjacentRoomRefs(room)
     if room.AdjacentRooms == nil then
         return
