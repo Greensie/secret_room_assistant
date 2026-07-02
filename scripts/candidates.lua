@@ -74,8 +74,23 @@ local function hasSuperSecretNeighbor(knownNeighbors, roomTypesByCell)
     return false
 end
 
+--- Marks locations touching a known narrow room shape as impossible.
+local function hasNarrowRoomNeighbor(knownNeighbors, roomShapesByCell)
+    if roomShapesByCell == nil then
+        return false
+    end
+
+    for i, neighbor in ipairs(knownNeighbors) do
+        if Grid.isNarrowRoomShape(roomShapesByCell[neighbor.cell]) then
+            return true
+        end
+    end
+
+    return false
+end
+
 --- Adds an empty cell once it satisfies the basic topology and room-type rules.
-local function addCandidateIfValid(candidatesByCell, candidateCell, knownCells, roomTypesByCell)
+local function addCandidateIfValid(candidatesByCell, candidateCell, knownCells, roomTypesByCell, roomShapesByCell)
     if candidateCell == nil then
         return
     end
@@ -101,6 +116,7 @@ local function addCandidateIfValid(candidatesByCell, candidateCell, knownCells, 
 
     if knownNeighborCount >= 2 then
         candidatesByCell[candidateCell] = {
+            isBlocked = hasNarrowRoomNeighbor(knownNeighbors, roomShapesByCell),
             knownNeighborCount = knownNeighborCount,
             knownNeighbors = knownNeighbors,
         }
@@ -108,22 +124,22 @@ local function addCandidateIfValid(candidatesByCell, candidateCell, knownCells, 
 end
 
 --- Builds and ranks all plausible Secret Room cells using only information available to the player.
-function Candidates.getTheoreticalSecretCandidates(knownCells, roomTypesByCell)
+function Candidates.getTheoreticalSecretCandidates(knownCells, roomTypesByCell, roomShapesByCell)
     local candidatesByCell = {}
 
     for i, knownCell in ipairs(knownCells) do
         local column = knownCell % Grid.LEVEL_GRID_WIDTH
 
-        addCandidateIfValid(candidatesByCell, knownCell - Grid.LEVEL_GRID_WIDTH, knownCells, roomTypesByCell)
+        addCandidateIfValid(candidatesByCell, knownCell - Grid.LEVEL_GRID_WIDTH, knownCells, roomTypesByCell, roomShapesByCell)
 
         if column < Grid.LEVEL_GRID_WIDTH - 1 then
-            addCandidateIfValid(candidatesByCell, knownCell + 1, knownCells, roomTypesByCell)
+            addCandidateIfValid(candidatesByCell, knownCell + 1, knownCells, roomTypesByCell, roomShapesByCell)
         end
 
-        addCandidateIfValid(candidatesByCell, knownCell + Grid.LEVEL_GRID_WIDTH, knownCells, roomTypesByCell)
+        addCandidateIfValid(candidatesByCell, knownCell + Grid.LEVEL_GRID_WIDTH, knownCells, roomTypesByCell, roomShapesByCell)
 
         if column > 0 then
-            addCandidateIfValid(candidatesByCell, knownCell - 1, knownCells, roomTypesByCell)
+            addCandidateIfValid(candidatesByCell, knownCell - 1, knownCells, roomTypesByCell, roomShapesByCell)
         end
     end
 
@@ -132,6 +148,7 @@ function Candidates.getTheoreticalSecretCandidates(knownCells, roomTypesByCell)
     for cell, candidateData in pairs(candidatesByCell) do
         table.insert(candidates, {
             cell = cell,
+            isBlocked = candidateData.isBlocked,
             knownNeighborCount = candidateData.knownNeighborCount,
             knownNeighbors = candidateData.knownNeighbors,
         })
