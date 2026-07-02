@@ -6,10 +6,12 @@ Finding a Secret Room normally requires checking the visible room layout, rememb
 
 The mod performs that bookkeeping for the player using only information the player could reasonably know. It evaluates visible room connections, handles multi-cell and L-shaped rooms, and rejects walls blocked by rocks, poop, spikes, water, fireplaces, or stationary stone enemies. Harmless decorations such as grass, mushrooms, and spider webs are ignored. Valid failed bomb tests are remembered for the rest of the floor.
 
-The assistant also avoids suggesting standard Secret Rooms on floors where they cannot generate, disables candidate hints in Greed and Greedier modes, and rejects locations adjacent to Boss Rooms.
+The assistant also avoids suggesting standard Secret Rooms on floors where they cannot generate, disables candidate hints in Greed and Greedier modes, and rejects locations adjacent to Boss Rooms or narrow rooms.
 
 
 ## Preview
+
+![Secret Room Assistant preview](preview.png)
 
 Candidate markers are rendered natively through MinimapAPI in the center of each possible room cell:
 

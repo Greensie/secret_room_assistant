@@ -113,4 +113,29 @@ function KnownRooms.getVisibleRoomTypesByCell(level, dimension)
     return roomTypesByCell
 end
 
+--- Maps visible cells in one dimension to their known room shapes for candidate filtering.
+function KnownRooms.getVisibleRoomShapesByCell(level, dimension)
+    local roomShapesByCell = {}
+    local rooms = level:GetRooms()
+
+    for i = 0, rooms.Size - 1 do
+        local roomDesc = rooms:Get(i)
+
+        if roomDesc ~= nil and
+            KnownRooms.getRoomDimension(level, roomDesc) == dimension and
+            roomDesc.DisplayFlags ~= 0 and
+            roomDesc.Data ~= nil and
+            KnownRooms.isRelevantForSecretRoomSearch(roomDesc.Data.Type)
+        then
+            local occupiedCells = Grid.getOccupiedCells(roomDesc)
+
+            for j, cell in ipairs(occupiedCells) do
+                roomShapesByCell[cell] = roomDesc.Data.Shape
+            end
+        end
+    end
+
+    return roomShapesByCell
+end
+
 return KnownRooms

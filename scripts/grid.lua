@@ -8,6 +8,11 @@ local Grid = {}
 Grid.LEVEL_GRID_WIDTH = 13
 Grid.LEVEL_GRID_SIZE = 13 * 13
 
+local ROOM_SHAPE_IH = RoomShape and RoomShape.ROOMSHAPE_IH or 2
+local ROOM_SHAPE_IV = RoomShape and RoomShape.ROOMSHAPE_IV or 3
+local ROOM_SHAPE_IIV = RoomShape and RoomShape.ROOMSHAPE_IIV or 5
+local ROOM_SHAPE_IIH = RoomShape and RoomShape.ROOMSHAPE_IIH or 7
+
 local ROOM_SHAPE_OFFSETS = {
     [1] = { { x = 0, y = 0 } },                                 -- 1x1
     [2] = { { x = 0, y = 0 } },                                 -- IH
@@ -22,6 +27,14 @@ local ROOM_SHAPE_OFFSETS = {
     [11] = { { x = 0, y = 0 }, { x = 1, y = 0 }, { x = 1, y = 1 } },  -- LBL
     [12] = { { x = 0, y = 0 }, { x = 1, y = 0 }, { x = 0, y = 1 } },  -- LBR
 }
+
+--- Returns whether a room shape is one of Isaac's narrow "I" room layouts.
+function Grid.isNarrowRoomShape(shape)
+    return shape == ROOM_SHAPE_IH or
+        shape == ROOM_SHAPE_IV or
+        shape == ROOM_SHAPE_IIV or
+        shape == ROOM_SHAPE_IIH
+end
 
 --- Returns SafeGridIndex as the stable room anchor, with GridIndex as a compatibility fallback.
 function Grid.getRoomAnchorCell(roomDesc)

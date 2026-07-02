@@ -122,10 +122,12 @@ function mod:OnNewRoom()
     local visitedCells = Memory.getVisitedCells()
     local visibleCells = KnownRooms.getVisibleCells(level, dimension)
     local roomTypesByCell = KnownRooms.getVisibleRoomTypesByCell(level, dimension)
+    local roomShapesByCell = KnownRooms.getVisibleRoomShapesByCell(level, dimension)
 
     if roomDesc.Data ~= nil then
         for i, cell in ipairs(occupiedCells) do
             roomTypesByCell[cell] = roomDesc.Data.Type
+            roomShapesByCell[cell] = roomDesc.Data.Shape
         end
     end
 
@@ -136,7 +138,7 @@ function mod:OnNewRoom()
     end
 
     local knownCells = Grid.mergeUniqueCells(visitedCells, visibleCells)
-    local secretCandidates = Candidates.getTheoreticalSecretCandidates(knownCells, roomTypesByCell)
+    local secretCandidates = Candidates.getTheoreticalSecretCandidates(knownCells, roomTypesByCell, roomShapesByCell)
 
     if not secretAllowed or
         not Memory.hasRemainingSecretRooms() or
@@ -158,7 +160,7 @@ function mod:OnNewRoom()
     end
 
     for i, candidate in ipairs(secretCandidates) do
-        candidate.isBlocked = Memory.isCandidateBlocked(candidate.cell)
+        candidate.isBlocked = candidate.isBlocked or Memory.isCandidateBlocked(candidate.cell)
     end
 
     MinimapOverlay.sync(secretCandidates, dimension)
