@@ -11,7 +11,7 @@ Secret Room Assistant highlights likely Secret Room candidates, remembers failed
 
 Tired of wasting bombs on walls that were never going to open?
 
-[b]Secret Room Assistant[/b] adds clear visual hints to your minimap, helping you identify likely Secret Room locations using only information that is already reasonably available to the player. It does not reveal hidden floor data or simply give you the answer — it acts more like a smart notebook that tracks room layout, valid candidates, blocked entrances, and failed bomb checks for you.
+Secret Room Assistant adds visual hints to your minimap, helping you identify likely Secret Room locations using only information that is already available to the player. It does not reveal hidden floor data or simply give you the answer - it acts more like a smart notebook that tracks room layout, valid candidates, blocked entrances, and failed bomb checks for you.
 
 [h2]What it does[/h2]
 
@@ -25,34 +25,12 @@ The mod analyzes the visible map layout and marks possible Secret Room positions
 
 Markers work on both the small minimap and the expanded map.
 
-[h2]Why use it?[/h2]
-
-Finding Secret Rooms is not difficult because the rules are impossible - it is difficult because keeping track of everything during a run becomes tedious. This mod reduces that bookkeeping without removing the decision-making from the game.
-
-It helps with:
-
-[list]
-[*]spotting strong Secret Room candidates faster
-[*]remembering which walls were already bombed
-[*]rejecting impossible entrances blocked by rocks, poop, spikes, water, fireplaces, or stationary stone enemies
-[*]handling multi-cell and L-shaped rooms
-[*]avoiding useless hints when Secret Rooms cannot normally generate
-[*]hiding hints when items or effects already reveal the relevant information
-[/list]
-
-[h2]Design philosophy[/h2]
-
-Secret Room Assistant is meant to be helpful, not a cheat overlay.
-
-It does not blindly expose hidden rooms. Instead, it uses visible information and Isaac’s normal Secret Room logic to point out where a room might reasonably be. You still decide whether spending a bomb is worth it.
-
 [h2]Compatibility notes[/h2]
 
 [list]
 [*]Designed for [b]The Binding of Isaac: Repentance+[/b]
 [*]Requires [b]MinimapAPI[/b]
 [*]Standard Secret Rooms are currently supported
-[*]Super Secret Room support is planned for a later version
 [*]Candidate hints are disabled in Greed and Greedier modes
 [/list]
 
@@ -64,7 +42,7 @@ https://steamcommunity.com/workshop/filedetails/?id=1978904635
 [h2]Feedback[/h2]
 
 This mod is still being improved. If you find a room layout where the assistant marks something incorrectly, please leave a comment with a screenshot or a short description of the floor situation.</description>
-    <version>1.3</version>
+    <version>1.4</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Rooms"/>
