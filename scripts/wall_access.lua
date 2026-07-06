@@ -234,6 +234,33 @@ function WallAccess.getInnerApproachGridIndex(room, roomDesc, roomCell, directio
     return nil
 end
 
+--- Returns the wall-adjacent cells covered by a potential Secret Room doorway.
+function WallAccess.getApproachGridIndexes(room, roomDesc, roomCell, direction)
+    local approachGridIndex = WallAccess.getApproachGridIndex(
+        room,
+        roomDesc,
+        roomCell,
+        direction
+    )
+
+    if approachGridIndex == nil then
+        return {}
+    end
+
+    local roomGridWidth = getRoomGridWidth(room, roomDesc)
+    local indexes = { approachGridIndex }
+
+    if direction == "up" or direction == "down" then
+        table.insert(indexes, approachGridIndex - 1)
+        table.insert(indexes, approachGridIndex + 1)
+    elseif direction == "left" or direction == "right" then
+        table.insert(indexes, approachGridIndex - roomGridWidth)
+        table.insert(indexes, approachGridIndex + roomGridWidth)
+    end
+
+    return indexes
+end
+
 --- Maps a stable room-local segment and direction to the matching Isaac DoorSlot.
 function WallAccess.getDoorSlot(roomDesc, roomCell, direction)
     if Grid.getRoomAnchorCell(roomDesc) < 0 then
@@ -296,6 +323,12 @@ function WallAccess.getCandidateWallsForRoom(room, roomDesc, occupiedCells, cand
                     neighbor.cell,
                     neighbor.direction
                 )
+                local approachGridIndexes = WallAccess.getApproachGridIndexes(
+                    room,
+                    roomDesc,
+                    neighbor.cell,
+                    neighbor.direction
+                )
                 local doorSlot = WallAccess.getDoorSlot(
                     roomDesc,
                     neighbor.cell,
@@ -308,6 +341,7 @@ function WallAccess.getCandidateWallsForRoom(room, roomDesc, occupiedCells, cand
                     roomCell = neighbor.cell,
                     wallGridIndex = wallGridIndex,
                     approachGridIndex = approachGridIndex,
+                    approachGridIndexes = approachGridIndexes,
                     innerApproachGridIndex = innerApproachGridIndex,
                     doorSlot = doorSlot,
                 })
@@ -360,6 +394,7 @@ function WallAccess.getCandidateWallChecks(room, walls)
         local approachCollisionClass = nil
         local approachGridCollision = nil
         local approachBlockingEntityType = nil
+        local blockingApproachGridIndex = nil
         local innerApproachGridEntity = nil
         local innerApproachGridEntityType = nil
         local innerApproachCollisionClass = nil
@@ -368,15 +403,6 @@ function WallAccess.getCandidateWallChecks(room, walls)
         if wall.wallGridIndex ~= nil then
             wallGridEntity = room:GetGridEntity(wall.wallGridIndex)
             wallGridCollision = WallAccess.getGridCollision(room, wall.wallGridIndex)
-        end
-
-        if wall.approachGridIndex ~= nil then
-            approachGridEntity = room:GetGridEntity(wall.approachGridIndex)
-            approachGridCollision = WallAccess.getGridCollision(room, wall.approachGridIndex)
-            approachBlockingEntityType = getBlockingEntityTypeAtGridIndex(
-                room,
-                wall.approachGridIndex
-            )
         end
 
         if wall.innerApproachGridIndex ~= nil then
@@ -392,26 +418,60 @@ function WallAccess.getCandidateWallChecks(room, walls)
             wallCollisionClass = wallGridEntity.CollisionClass
         end
 
-        if approachGridEntity ~= nil then
-            approachGridEntityType = approachGridEntity:GetType()
-            approachCollisionClass = approachGridEntity.CollisionClass
-        end
-
         if innerApproachGridEntity ~= nil then
             innerApproachGridEntityType = innerApproachGridEntity:GetType()
             innerApproachCollisionClass = innerApproachGridEntity.CollisionClass
         end
 
         local approachStatus = "UNKNOWN"
+        local approachGridIndexes = wall.approachGridIndexes or {}
+
+        if #approachGridIndexes == 0 and wall.approachGridIndex ~= nil then
+            approachGridIndexes = { wall.approachGridIndex }
+        end
 
         if wallGridEntityType == GRID_FIREPLACE then
             approachStatus = "BLOCKED"
-        elseif approachBlockingEntityType ~= nil then
-            approachStatus = "BLOCKED"
-        elseif approachGridCollision ~= nil then
-            if isBlockingGridSample(approachGridEntityType, approachGridCollision) then
+        end
+
+        for j, approachIndex in ipairs(approachGridIndexes) do
+            local sampleGridEntity = room:GetGridEntity(approachIndex)
+            local sampleGridEntityType = nil
+            local sampleCollisionClass = nil
+            local sampleGridCollision = WallAccess.getGridCollision(room, approachIndex)
+            local sampleBlockingEntityType = getBlockingEntityTypeAtGridIndex(
+                room,
+                approachIndex
+            )
+
+            if sampleGridEntity ~= nil then
+                sampleGridEntityType = sampleGridEntity:GetType()
+                sampleCollisionClass = sampleGridEntity.CollisionClass
+            end
+
+            if approachIndex == wall.approachGridIndex then
+                approachGridEntity = sampleGridEntity
+                approachGridEntityType = sampleGridEntityType
+                approachCollisionClass = sampleCollisionClass
+                approachGridCollision = sampleGridCollision
+                approachBlockingEntityType = sampleBlockingEntityType
+            end
+
+            if sampleBlockingEntityType ~= nil then
                 approachStatus = "BLOCKED"
-            else
+                blockingApproachGridIndex = approachIndex
+                break
+            end
+
+            if sampleGridCollision ~= nil and
+                isBlockingGridSample(sampleGridEntityType, sampleGridCollision)
+            then
+                approachStatus = "BLOCKED"
+                blockingApproachGridIndex = approachIndex
+                break
+            end
+
+            if approachStatus == "UNKNOWN" then
                 approachStatus = "OPEN"
             end
         end
@@ -428,6 +488,7 @@ function WallAccess.getCandidateWallChecks(room, walls)
             approachCollisionClass = approachCollisionClass,
             approachGridCollision = approachGridCollision,
             approachBlockingEntityType = approachBlockingEntityType,
+            blockingApproachGridIndex = blockingApproachGridIndex,
             innerApproachGridIndex = wall.innerApproachGridIndex,
             innerApproachGridEntityType = innerApproachGridEntityType,
             innerApproachCollisionClass = innerApproachCollisionClass,
@@ -494,6 +555,7 @@ function WallAccess.formatCandidateWallChecks(checks)
                 check.approachGridCollision
             ) ..
             ":e" .. tostring(check.approachBlockingEntityType or "none") ..
+            ":b" .. tostring(check.blockingApproachGridIndex or "none") ..
             " " ..
             formatGridCheck(
                 "i",

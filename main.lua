@@ -114,7 +114,7 @@ function mod:OnNewRoom()
 
     local occupiedCells = Grid.getOccupiedCells(roomDesc)
 
-    if roomDesc.Data ~= nil and KnownRooms.isRelevantForSecretRoomSearch(roomDesc.Data.Type) then
+    if KnownRooms.isDescriptorRelevantForSecretRoomSearch(level, roomDesc) then
         Memory.markCellsAsVisited(occupiedCells)
     end
 
@@ -124,7 +124,7 @@ function mod:OnNewRoom()
     local roomTypesByCell = KnownRooms.getVisibleRoomTypesByCell(level, dimension)
     local roomShapesByCell = KnownRooms.getVisibleRoomShapesByCell(level, dimension)
 
-    if roomDesc.Data ~= nil then
+    if KnownRooms.isDescriptorRelevantForSecretRoomSearch(level, roomDesc) then
         for i, cell in ipairs(occupiedCells) do
             roomTypesByCell[cell] = roomDesc.Data.Type
             roomShapesByCell[cell] = roomDesc.Data.Shape

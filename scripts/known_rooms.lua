@@ -7,12 +7,82 @@ local Grid = require("scripts.grid")
 
 local KnownRooms = {}
 
+local ROOM_DEFAULT = RoomType and RoomType.ROOM_DEFAULT or 1
 local ROOM_ULTRASECRET = RoomType and RoomType.ROOM_ULTRASECRET or 35
+local LEVEL_STAGE_2_1 = LevelStage and LevelStage.STAGE2_1 or 4
+local LEVEL_STAGE_2_2 = LevelStage and LevelStage.STAGE2_2 or 5
+local STAGE_TYPE_REPENTANCE = StageType and StageType.STAGETYPE_REPENTANCE or 4
+local STAGE_TYPE_REPENTANCE_B = StageType and StageType.STAGETYPE_REPENTANCE_B or 5
+local CURSE_OF_LABYRINTH = LevelCurse and LevelCurse.CURSE_OF_LABYRINTH or 1
 local MAX_DIMENSION = 2
 
 --- Excludes room types that must not influence standard Secret Room candidates.
 function KnownRooms.isRelevantForSecretRoomSearch(roomType)
     return roomType ~= ROOM_ULTRASECRET
+end
+
+--- Returns whether the current stage uses Repentance's alternate path room set.
+local function isAltPath(level)
+    local stageType = level:GetStageType()
+
+    if stageType == STAGE_TYPE_REPENTANCE or stageType == STAGE_TYPE_REPENTANCE_B then
+        return true
+    end
+
+    if StageAPI ~= nil and
+        StageAPI.Loaded and
+        StageAPI.GetCurrentStage ~= nil
+    then
+        local currentStage = StageAPI.GetCurrentStage()
+
+        if currentStage ~= nil and currentStage.LevelgenStage ~= nil then
+            local levelgenStageType = currentStage.LevelgenStage.StageType
+            return levelgenStageType == STAGE_TYPE_REPENTANCE or
+                levelgenStageType == STAGE_TYPE_REPENTANCE_B
+        end
+    end
+
+    return false
+end
+
+--- Returns whether a descriptor is the Mines/Ashpit II minecart room.
+local function isMinecartRoom(level, roomDesc)
+    if roomDesc == nil or roomDesc.Data == nil then
+        return false
+    end
+
+    if roomDesc.Data.Type ~= ROOM_DEFAULT or roomDesc.Data.Subtype ~= 10 then
+        return false
+    end
+
+    if not isAltPath(level) then
+        return false
+    end
+
+    local absoluteStage = level:GetStage()
+
+    if level.GetAbsoluteStage ~= nil then
+        absoluteStage = level:GetAbsoluteStage()
+    end
+
+    local isCurseLabyrinth = false
+
+    if level.GetCurses ~= nil then
+        isCurseLabyrinth = level:GetCurses() & CURSE_OF_LABYRINTH == CURSE_OF_LABYRINTH
+    end
+
+    return (absoluteStage == LEVEL_STAGE_2_2 and not isCurseLabyrinth) or
+        (absoluteStage == LEVEL_STAGE_2_1 and isCurseLabyrinth)
+end
+
+--- Excludes descriptor-specific layouts that cannot have standard Secret Room entrances.
+function KnownRooms.isDescriptorRelevantForSecretRoomSearch(level, roomDesc)
+    if roomDesc == nil or roomDesc.Data == nil then
+        return false
+    end
+
+    return KnownRooms.isRelevantForSecretRoomSearch(roomDesc.Data.Type) and
+        not isMinecartRoom(level, roomDesc)
 end
 
 --- Compares engine room descriptors by pointer identity rather than Lua wrapper identity.
@@ -72,8 +142,7 @@ function KnownRooms.getVisibleCells(level, dimension)
         if roomDesc ~= nil and
             KnownRooms.getRoomDimension(level, roomDesc) == dimension and
             roomDesc.DisplayFlags ~= 0 and
-            roomDesc.Data ~= nil and
-            KnownRooms.isRelevantForSecretRoomSearch(roomDesc.Data.Type)
+            KnownRooms.isDescriptorRelevantForSecretRoomSearch(level, roomDesc)
         then
             local occupiedCells = Grid.getOccupiedCells(roomDesc)
 
@@ -99,8 +168,7 @@ function KnownRooms.getVisibleRoomTypesByCell(level, dimension)
         if roomDesc ~= nil and
             KnownRooms.getRoomDimension(level, roomDesc) == dimension and
             roomDesc.DisplayFlags ~= 0 and
-            roomDesc.Data ~= nil and
-            KnownRooms.isRelevantForSecretRoomSearch(roomDesc.Data.Type)
+            KnownRooms.isDescriptorRelevantForSecretRoomSearch(level, roomDesc)
         then
             local occupiedCells = Grid.getOccupiedCells(roomDesc)
 
@@ -124,8 +192,7 @@ function KnownRooms.getVisibleRoomShapesByCell(level, dimension)
         if roomDesc ~= nil and
             KnownRooms.getRoomDimension(level, roomDesc) == dimension and
             roomDesc.DisplayFlags ~= 0 and
-            roomDesc.Data ~= nil and
-            KnownRooms.isRelevantForSecretRoomSearch(roomDesc.Data.Type)
+            KnownRooms.isDescriptorRelevantForSecretRoomSearch(level, roomDesc)
         then
             local occupiedCells = Grid.getOccupiedCells(roomDesc)
 
